@@ -1,7 +1,17 @@
 'use strict';
 
+var CLOUD_WIDTH = 420;
+var CLOUD_HEIGHT = 270;
+var CLOUD_LEFT = 100;
+var CLOUD_TOP = 10;
+var CLOUD_CORNER_RADIUS = 20;
+var CLOUD_TEXT_COLOR = '#000';
+
+var INITIAL_Y = CLOUD_HEIGHT + CLOUD_TOP - 35;
+var BAR_WIDTH = 40;
+
 // - функция roundedRect отсюда: https://developer.mozilla.org/ru/docs/Web/API/Canvas_API/Tutorial/Рисование_фигур
-function roundedRect(ctx, x, y, width, height, radius) {
+function roundedRect(ctx, x, y, width, height, radius, color) {
   ctx.beginPath();
   ctx.moveTo(x, y + radius);
   ctx.lineTo(x, y + height - radius);
@@ -12,33 +22,38 @@ function roundedRect(ctx, x, y, width, height, radius) {
   ctx.quadraticCurveTo(x + width, y, x + width - radius, y);
   ctx.lineTo(x + radius, y);
   ctx.quadraticCurveTo(x, y, x, y + radius);
+  ctx.fillStyle = color;
   ctx.fill();
 }
 
-window.renderStatistics = function (ctx, names, times) {
-  var cloudFill = 'rgba(256, 256, 256, 1.0)';
-  var cloudShadow = 'rgba(0, 0, 0, 0.7)';
-  var cloudWidth = 420;
-  var cloudHeight = 270;
-  var cloudLeft = 100;
-  var cloudTop = 10;
-  var shadowShift = 10;
-  var cloudCornerRadius = 20;
-  var cloudText = '#000';
-  var cloudFont = '16px PT Mono';
-  ctx.fillStyle = cloudShadow;
-  roundedRect(ctx, cloudLeft + shadowShift, cloudTop + shadowShift, cloudWidth, cloudHeight, cloudCornerRadius);
-  ctx.fillStyle = cloudFill;
-  roundedRect(ctx, cloudLeft, cloudTop, cloudWidth, cloudHeight, cloudCornerRadius);
+function drawBar(ctx, x, y, width, height, randomColor) {
+  if (randomColor) {
+    var opacity = Math.random();
+    if (opacity <= 0.1) {
+      opacity += 0.1;
+    }
+    ctx.fillStyle = 'rgba(0, 0, 255, ' + opacity.toString() + ')';
+  } else {
+    ctx.fillStyle = 'rgba(255, 0, 0, 1)';
+  }
+  ctx.fillRect(x, y, width, height);
+}
 
-  var topTextX = 120;
-  var firstStringY = 28;
-  var secondStringY = 48;
+function drawBarTitles(ctx, topText, bottomText, x, y, bottomY, color) {
+  ctx.fillStyle = color;
+  ctx.fillText(topText, x, y - 23);
+  ctx.fillText(bottomText, x, bottomY + 4);
+}
+
+window.renderStatistics = function (ctx, names, times) {
+  roundedRect(ctx, CLOUD_LEFT + 10, CLOUD_TOP + 10, CLOUD_WIDTH, CLOUD_HEIGHT, CLOUD_CORNER_RADIUS, 'rgba(0, 0, 0, 0.7)');
+  roundedRect(ctx, CLOUD_LEFT, CLOUD_TOP, CLOUD_WIDTH, CLOUD_HEIGHT, CLOUD_CORNER_RADIUS, 'rgba(256, 256, 256, 1.0)');
+
   ctx.textBaseline = 'top';
-  ctx.font = cloudFont;
-  ctx.fillStyle = cloudText;
-  ctx.fillText('Ура вы победили!', topTextX, firstStringY);
-  ctx.fillText('Список результатов:', topTextX, secondStringY);
+  ctx.font = '16px PT Mono';
+  ctx.fillStyle = CLOUD_TEXT_COLOR;
+  ctx.fillText('Ура вы победили!', 120, 28);
+  ctx.fillText('Список результатов:', 120, 48);
 
   var max = -1;
 
@@ -50,38 +65,19 @@ window.renderStatistics = function (ctx, names, times) {
     }
   }
 
-  var histogramHeight = 150;
-  var step = histogramHeight / max;
-
-  var barWidth = 40;
-  var indent = 50;
-  var initialX = 140;
-  var initialY = cloudHeight + cloudTop - 35;
-  var timesIndent = 23;
-  var namesIndent = 4;
-  var barColor;
-  var barOpacity;
+  var step = 150 / max;
   var barX;
   var barY;
   var barHeight;
 
   for (var i = 0; i < times.length; i++) {
-    if (names[i] === 'Вы') {
-      barColor = 'rgba(255, 0, 0, 1)';
-    } else {
-      barOpacity = Math.random();
-      if (barOpacity <= 0.1) {
-        barOpacity += 0.1;
-      }
-      barColor = 'rgba(0, 0, 255, ' + barOpacity.toString() + ')';
-    }
-    barX = initialX + (indent + barWidth) * i;
+    var randomColor = (names[i] !== 'Вы');
+
+    barX = 140 + (BAR_WIDTH + 50) * i;
     barHeight = times[i] * step;
-    barY = initialY - barHeight;
-    ctx.fillStyle = barColor;
-    ctx.fillRect(barX, barY, barWidth, barHeight);
-    ctx.fillStyle = cloudText;
-    ctx.fillText(times[i].toString(), barX, barY - timesIndent);
-    ctx.fillText(names[i], barX, initialY + namesIndent);
+    barY = INITIAL_Y - barHeight;
+
+    drawBar(ctx, barX, barY, BAR_WIDTH, barHeight, randomColor);
+    drawBarTitles(ctx, times[i].toString(), names[i], barX, barY, INITIAL_Y, CLOUD_TEXT_COLOR);
   }
 };
