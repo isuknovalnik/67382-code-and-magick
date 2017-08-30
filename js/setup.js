@@ -4,41 +4,51 @@ var WIZARD_NAMES = ['Иван', 'Хуан Себастьян', 'Мария', 'К
 var WIZARD_SURNAMES = ['да Марья', 'Верон', 'Мирабелла', 'Вальц', 'Онопко', 'Топольницкая', 'Нионго', 'Ирвинг'];
 var WIZARD_COAT_COLORS = ['rgb(101, 137, 164)', 'rgb(241, 43, 107)', 'rgb(146, 100, 161)', 'rgb(56, 159, 117)', 'rgb(215, 210, 55)', 'rgb(0, 0, 0)'];
 var WIZARD_EYES_COLORS = ['black', 'red', 'blue', 'yellow', 'green'];
+var WIZARD_FIREBALL_COLORS = ['#ee4830', '#30a8ee', '#5ce6c0', '#e848d5', '#e6e848'];
+
 var wizards = [];
-var selections = [];
 
-function getRandomElement(arr, n) {
-  var ratio = 1 / arr.length;
-  var lastIndex = arr.length - 1;
-  var randomValue = Math.random();
-  for (var j = 0; j < lastIndex; j++) {
-    if (randomValue <= (j + 1) * ratio) {
-      selections[n] = j;
-      return arr[j];
-    }
+var ESC_KEYCODE = 27;
+var ENTER_KEYCODE = 13;
+
+function getUniqueRandomElement(arr) {
+  if (arr.length === 1) {
+    return [arr[0], []];
   }
-  selections[n] = lastIndex;
-  return arr[lastIndex];
+  var randomIndex = Math.floor(Math.random() * arr.length);
+  var selectedElement = arr.splice(randomIndex, 1);
+  return [selectedElement, arr];
 }
 
-function describeWizards(names, surnames, coats, eyes) {
+function describeWizards() {
+  var names = WIZARD_NAMES.slice();
+  var surnames = WIZARD_SURNAMES.slice();
+  var coats = WIZARD_COAT_COLORS.slice();
+  var eyes = WIZARD_EYES_COLORS.slice();
+  var selectedName;
+  var selectedSurname;
+  var selectedCoat;
+  var selectedEyes;
   for (var k = 0; k < 4; k++) {
+    selectedName = getUniqueRandomElement(names);
+    names = selectedName[1];
+    selectedSurname = getUniqueRandomElement(surnames);
+    surnames = selectedSurname[1];
+    selectedCoat = getUniqueRandomElement(coats);
+    coats = selectedCoat[1];
+    selectedEyes = getUniqueRandomElement(eyes);
+    eyes = selectedEyes[1];
     wizards[k] = {
-      name: getRandomElement(names, 0) + ' ' + getRandomElement(surnames, 1),
-      coatColor: getRandomElement(coats, 2),
-      eyesColor: getRandomElement(eyes, 3)
+      name: selectedName[0] + ' ' + selectedSurname[0],
+      coatColor: selectedCoat[0],
+      eyesColor: selectedEyes[0]
     };
-    names.splice(selections[0], 1);
-    surnames.splice(selections[1], 1);
-    coats.splice(selections[2], 1);
-    eyes.splice(selections[3], 1);
   }
 }
 
-describeWizards(WIZARD_NAMES, WIZARD_SURNAMES, WIZARD_COAT_COLORS, WIZARD_EYES_COLORS);
+describeWizards();
 
 var userDialog = document.querySelector('.setup');
-userDialog.classList.remove('hidden');
 
 var similarListElement = userDialog.querySelector('.setup-similar-list');
 
@@ -64,3 +74,88 @@ var displayWizards = function () {
 
 displayWizards();
 userDialog.querySelector('.setup-similar').classList.remove('hidden');
+
+var setup = document.querySelector('.setup');
+var setupOpen = document.querySelector('.setup-open');
+var setupClose = setup.querySelector('.setup-close');
+var userNameInput = setup.querySelector('.setup-user-name');
+var setupWizard = setup.querySelector('.setup-wizard');
+var wizardCoat = setupWizard.querySelector('.wizard-coat');
+var wizardCoatValue = document.getElementsByName('coat-color');
+var setupCoats = WIZARD_COAT_COLORS.slice();
+var wizardEyes = setupWizard.querySelector('.wizard-eyes');
+var setupEyes = WIZARD_EYES_COLORS.slice();
+var wizardEyesValue = document.getElementsByName('eyes-color');
+
+var setupFireball = setup.querySelector('.setup-fireball-wrap');
+var setupFireballValue = document.getElementsByName('fireball-color');
+var fireballs = WIZARD_FIREBALL_COLORS.slice();
+
+setupOpen.addEventListener('click', openPopup);
+setupClose.addEventListener('click', closePopup);
+userNameInput.addEventListener('focus', onUserNameFocus);
+userNameInput.addEventListener('blur', onUserNameBlur);
+wizardCoat.addEventListener('click', onWizardCoatClick);
+wizardEyes.addEventListener('click', onWizardEyesClick);
+setupFireball.addEventListener('click', onFireballClick);
+
+setupOpen.addEventListener('keydown', onSetupOpenKeyPress);
+
+setupClose.addEventListener('keydown', onSetupCloseKeyPress);
+
+function onSetupOpenKeyPress(evt) {
+  if (evt.keyCode === ENTER_KEYCODE) {
+    openPopup();
+  }
+}
+
+function onSetupCloseKeyPress(evt) {
+  if (evt.keyCode === ENTER_KEYCODE) {
+    closePopup();
+  }
+}
+
+function onPopupEscPress(evt) {
+  if (evt.keyCode === ESC_KEYCODE) {
+    closePopup();
+  }
+}
+
+function openPopup() {
+  setup.classList.remove('hidden');
+  document.addEventListener('keydown', onPopupEscPress);
+}
+
+function onUserNameFocus() {
+  document.removeEventListener('keydown', onPopupEscPress);
+}
+
+function onUserNameBlur() {
+  document.addEventListener('keydown', onPopupEscPress);
+}
+
+function closePopup() {
+  setup.classList.add('hidden');
+  document.removeEventListener('keydown', onPopupEscPress);
+}
+
+function onWizardCoatClick() {
+  var selectedCoat = getUniqueRandomElement(setupCoats);
+  setupCoats = selectedCoat[1].length ? selectedCoat[1] : WIZARD_COAT_COLORS.slice();
+  wizardCoat.style.fill = selectedCoat[0];
+  wizardCoatValue.value = selectedCoat[0];
+}
+
+function onWizardEyesClick() {
+  var selectedEyes = getUniqueRandomElement(setupEyes);
+  setupEyes = selectedEyes[1].length ? selectedEyes[1] : WIZARD_EYES_COLORS.slice();
+  wizardEyes.style.fill = selectedEyes[0];
+  wizardEyesValue.value = selectedEyes[0];
+}
+
+function onFireballClick() {
+  var selectedFireball = getUniqueRandomElement(fireballs);
+  fireballs = selectedFireball[1].length ? selectedFireball[1] : WIZARD_FIREBALL_COLORS.slice();
+  setupFireball.style.backgroundColor = selectedFireball[0];
+  setupFireballValue.value = selectedFireball[0];
+}
